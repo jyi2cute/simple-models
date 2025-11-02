@@ -11,10 +11,6 @@ const { Dog } = models;
 const hostIndex = async (req, res) => {
   // Start with the name as unknown
   let name = 'unknown';
-  let type = 'pet';
-
-  let doc = null;
-  let doc2 = null;
 
   try {
     /* Cat.findOne() will find a cat that matches the query given to it as the first parameter.
@@ -26,7 +22,7 @@ const hostIndex = async (req, res) => {
        in descending order (so that more recent things are "on the top"). Since we are only
        finding one, this query will either find the most recent cat if it exists, or nothing.
     */
-    doc = await Cat.findOne({}, {}, {
+    const doc = await Cat.findOne({}, {}, {
       sort: { createdDate: 'descending' },
     }).lean().exec();
 
@@ -39,41 +35,11 @@ const hostIndex = async (req, res) => {
     console.log(err);
   }
 
-  try {
-    doc2 = await Dog.findOne({}, {}, {
-      sort: { createdDate: 'descending' },
-    }).lean().exec();
-
-    if (doc2) {
-      name = doc2.name;
-    }
-  } catch (err) {
-    console.log(err);
-  }
-
-  // logic for the correct type of pet with it's name to be displayed
-  if (doc && doc2) {
-    if (doc.createdDate > doc2.createDate) {
-      name = doc.name;
-      type = 'Cat';
-    } else {
-      name = doc2.name;
-      type = 'Dog';
-    }
-  } else if (doc) {
-    name = doc.name;
-    type = 'Cat';
-  } else if (doc2) {
-    name = doc2.name;
-    type = 'Dog';
-  }
-
-  /* res.render will render the given view from the views folder. In this case, index.
+  /* res.render will render the given view frosm the views folder. In this case, index.
      We pass it a number of variables to populate the page.
   */
   res.render('index', {
     currentName: name,
-    currentType: type,
     title: 'Home',
     pageName: 'Home Page',
   });
@@ -323,7 +289,7 @@ const notFound = (req, res) => {
 // creates a new dog
 const setDog = async (req, res) => {
   if (!req.body.name || !req.body.breed || !req.body.age) {
-    return res.status(400).json({ error: 'Name, age, breed are required.' });
+    return res.status(400).json({ error: 'Name, age, breed are all required.' });
   }
 
   const dogData = {
@@ -349,34 +315,33 @@ const setDog = async (req, res) => {
 };
 
 // increases dog age by 1
-const increaseDogAge = async (req, res) => {
+const increaseDogAge = (req, res) => {
   const { dogName } = req.body;
 
   if (!dogName) {
-    return res.status(400).json({ error: 'Dog name is required to find a dog.' });
+    return res.status(400).json({ error: 'Dog name is required to increase an age of a dog.' });
   }
 
-  let updatedDoc;
+  const updatePromise = Dog.findOneAndUpdate(
+    { name: dogName },
+    { $inc: { age: 1 } },
+    { new: true },
+  ).lean().exec();
 
-  try {
-    updatedDoc = await Dog.findOneAndUpdate(
-      { name: dogName },
-      { $inc: { age: 1 } },
-      { new: true },
-    ).lean().exec();
-  } catch (err) {
+  return updatePromise.then((doc) => {
+    if (!doc) {
+      return res.status(404).json({ error: `The dog named ${dogName} doesn't exist.` });
+    }
+
+    return res.json({
+      message: `${doc.name}'s age has been increased to ${doc.age}.`,
+      name: updatePromise.name,
+      age: updatePromise.age,
+    });
+
+  }).catch((err) => {
     console.log(err);
     return res.status(500).json({ error: 'There was an error contacting the database.' });
-  }
-
-  if (!updatedDoc) {
-    return res.status(404).json({ error: `The dog named ${dogName} doesn't exist.` });
-  }
-
-  return res.json({
-    message: `${updatedDoc.name}'s age has been increased to ${updatedDoc.age}.`,
-    name: updatedDoc.name,
-    age: updatedDoc.age,
   });
 };
 
@@ -390,6 +355,7 @@ const hostPage4 = async (req, res) => {
     return res.status(500).json({ error: 'Failed to find dogs.' });
   }
 };
+
 // export the relevant public controller functions
 module.exports = {
   index: hostIndex,
