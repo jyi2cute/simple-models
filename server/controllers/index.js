@@ -364,7 +364,6 @@ const increaseDogAge = async (req, res) => {
       { $inc: { age: 1 } },
       { new: true },
     ).lean().exec();
-    
   } catch (err) {
     console.log(err);
     return res.status(500).json({ error: 'There was an error contacting the database.' });
