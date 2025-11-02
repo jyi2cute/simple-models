@@ -14,5 +14,28 @@
   <a href="/">Home</a>
   <a href="/page1">Page 1</a>
   <a href="/page2">Page 2</a>
+  <a href="/page4">Page 4</a>
+
+  <form action="/setDog" method="POST">
+    <label for="name">Name:</label>
+    <input type="text" name="name" required>
+    <label for="breed">Breed: </label>
+    <input type="text" name="breed" required>
+    <label for="age">Age:</label>
+    <input type="number" name="age"  min="0" required>
+
+    <input type="submit" value="Add a new dog!">
+  </form>
+
+  <br/>
+  <br/>
+
+  <form action="/increaseDogAge" method="POST">
+    <label for="dogName"> Dog's Name to Increase Age:</label>
+    <input type="text" name="dogName" required>
+
+    <input type="submit" value="Increase Dog Age by 1 year">
+  </form>
+
 </body>
 </html>
